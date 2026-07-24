@@ -1,0 +1,146 @@
+{% extends "letters/base.html" %}
+{% block title %}Pay Slip Generator - Cloud R tech{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Back to Dashboard</a>
+<div class="card">
+  <h1>Pay Slip Generator</h1>
+
+  <form id="dl-form" method="post" action="/generate/payslip/">
+    {% csrf_token %}
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Employee No</label>
+        <input type="text" id="emp-no-input" name="emp_no" placeholder="CRT001" required>
+      </div>
+
+      <div class="form-group">
+        <label>Employee Name</label>
+        <input type="text" name="name" placeholder="Jestin Rosariyo L" required>
+      </div>
+
+      <div class="form-group">
+        <label>Designation</label>
+        <div id="desg-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="designation-val" name="designation" required>
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <div id="category-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="category-val" name="category" required>
+      </div>
+
+      <div class="form-group">
+        <label>Sex</label>
+        <select name="sex" required>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Date of Joining</label>
+        <div class="date-wrap">
+          <input type="date" id="doj_picker" class="date-picker">
+          <input type="text" id="doj_display" name="date_of_joining" placeholder="20/05/2024" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Pay Slip Month</label>
+        <input type="month" id="month_picker" name="month_year_raw" placeholder="2026-04">
+        <input type="hidden" id="month_year" name="month_year">
+      </div>
+
+      <div class="form-group">
+        <label>Working Days</label>
+        <input type="number" name="working_days" id="working_days" placeholder="31" min="1" max="31" required>
+      </div>
+
+      <div class="form-group">
+        <label>Paid Holiday</label>
+        <input type="number" name="paid_holiday" id="paid_holiday" placeholder="0" min="0" max="31" value="0">
+      </div>
+
+      <div class="form-group">
+        <label>Gross Salary (INR) <span class="auto-badge">used for calculation</span></label>
+        <input type="number" name="gross_salary" id="gross_salary" placeholder="37500" min="1" required>
+      </div>
+
+    </div>
+    <div class="btn-group">
+      <button class="btn-generate" type="button" onclick="submitForm('/generate/payslip/')">
+        📄&nbsp; Download PDF
+      </button>
+      <button class="btn-generate-docx" type="button" onclick="submitForm('/generate/payslip/docx/')">
+        📝&nbsp; Download DOCX
+      </button>
+    </div>
+    <script>
+      function submitForm(url) {
+        var form = document.getElementById('dl-form');
+        form.action = url;
+        form.submit();
+      }
+    </script>
+  </form>
+</div>
+
+<style>
+  .date-wrap { position: relative; display: flex; flex-direction: column; gap: 6px; }
+  .date-picker { position: absolute; opacity: 0; pointer-events: none; }
+</style>
+
+<script>
+  // ── Employee No. (CRT + 3 digits) ──
+  bindCRTRef(document.getElementById('emp-no-input'));
+
+  // ── Custom Dropdowns ──
+  initCDD({
+    wrap:        document.getElementById('desg-wrap'),
+    hiddenInput: document.getElementById('designation-val'),
+    sessionKey:  'designations',
+    placeholder: '— Select Designation —',
+  });
+  initCDD({
+    wrap:        document.getElementById('category-wrap'),
+    hiddenInput: document.getElementById('category-val'),
+    sessionKey:  'categories',
+    placeholder: '— Select Category —',
+  });
+
+  // ── Date of Joining ──
+  const dojPicker  = document.getElementById('doj_picker');
+  const dojDisplay = document.getElementById('doj_display');
+  dojDisplay.addEventListener('click', () => dojPicker.showPicker?.());
+  dojPicker.addEventListener('change', () => {
+    const [y, m, d] = dojPicker.value.split('-');
+    dojDisplay.value = `${d}/${m}/${y}`;
+  });
+
+  // ── Month Year ──
+  const monthPicker = document.getElementById('month_picker');
+  const monthHidden = document.getElementById('month_year');
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  function updateMonth() {
+    if (!monthPicker.value) return;
+    const [y, m] = monthPicker.value.split('-');
+    monthHidden.value = `${MONTHS[parseInt(m)-1]} ${y}`;
+  }
+  monthPicker.addEventListener('change', updateMonth);
+  // Set default to current month
+  const now = new Date();
+  monthPicker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  updateMonth();
+
+  // ── Title Case ──
+  ['name'].forEach(n => {
+    const el = document.querySelector(`[name="${n}"]`);
+    if (el) el.addEventListener('blur', () => {
+      if (el.value) el.value = el.value.replace(/\w\S*/g, w => w[0].toUpperCase() + w.slice(1));
+    });
+  });
+</script>
+{% endblock %}

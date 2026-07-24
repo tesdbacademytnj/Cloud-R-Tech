@@ -1,0 +1,173 @@
+{% extends "letters/base.html" %}
+{% block title %}Dashboard – Cloud R tech HR Portal{% endblock %}
+{% block content %}
+<style>
+  .hero {
+    text-align: center;
+    padding: 20px 0 36px;
+  }
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: var(--brand-light);
+    border: 1px solid var(--brand-mid);
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -.5px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+  .hero h1 em {
+    color: var(--brand);
+    font-style: italic;
+  }
+  .hero p {
+    color: var(--ink-3);
+    font-size: 1rem;
+    max-width: 420px;
+    margin: 0 auto;
+    font-weight: 300;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .doc-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 32px 28px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp .35s ease both;
+  }
+
+  .doc-card:nth-child(2) { animation-delay: .05s; }
+  .doc-card:nth-child(3) { animation-delay: .10s; }
+  .doc-card:nth-child(4) { animation-delay: .15s; }
+
+  .doc-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+  }
+
+  .doc-card:hover {
+    border-color: var(--brand-mid);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+  }
+
+  .doc-card:hover::before { transform: scaleX(1); }
+
+  .doc-card .icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .doc-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -.2px;
+  }
+
+  .doc-card p {
+    font-size: 0.85rem;
+    color: var(--ink-3);
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .doc-card .arrow {
+    margin-top: auto;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--brand);
+    letter-spacing: .3px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: var(--transition);
+  }
+
+  .doc-card:hover .arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 560px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.8rem; }
+  }
+</style>
+
+<div class="hero">
+  <div class="hero-eyebrow">HR Letter Generator</div>
+  <h1>Cloud R <em>tech</em></h1>
+  <p>Fill a form and instantly download a pixel-perfect branded PDF letter.</p>
+</div>
+
+<div class="cards-grid">
+  <a class="doc-card" href="/appraisal/">
+    {% comment %} <div class="icon">📈</div> {% endcomment %}
+    <h2>Appraisal Letter</h2>
+    <p>Salary revision &amp; performance appreciation with salary breakup annexure.</p>
+    <div class="arrow">Generate PDF →</div>
+  </a>
+  <a class="doc-card" href="/experience/">
+    {% comment %} <div class="icon">📋</div> {% endcomment %}
+    <h2>Experience / Relieving</h2>
+    <p>Formal relieving with designation, dates, reason &amp; conduct remarks.</p>
+    <div class="arrow">Generate PDF →</div>
+  </a>
+  <a class="doc-card" href="/offer/">
+    {% comment %} <div class="icon">✉️</div> {% endcomment %}
+    <h2>Offer Letter</h2>
+    <p>Full appointment letter with all 14 clauses and detailed salary annexure.</p>
+    <div class="arrow">Generate PDF →</div>
+  </a>
+  <a class="doc-card" href="/contract/">
+    {% comment %} <div class="icon">🔄</div> {% endcomment %}
+    <h2>Contract Extension</h2>
+    <p>Contract renewal with revised CTC and full salary breakup annexure.</p>
+    <div class="arrow">Generate PDF →</div>
+  </a>
+  <a class="doc-card" href="/payslip/">
+    <h2>Pay Slip</h2>
+    <p>Monthly pay slip with auto-calculated salary breakdown, earnings, deductions &amp; net pay.</p>
+    <div class="arrow">Generate PDF →</div>
+  </a>
+  <a class="doc-card" href="/settings/" style="grid-column: 1 / -1; border-style: dashed;">
+    <h2>⚙ HR Manager Settings</h2>
+    <p>Change the active HR Manager name and signature PNG used on all letters.</p>
+    <div class="arrow">Open Settings →</div>
+  </a>
+</div>
+{% endblock %}

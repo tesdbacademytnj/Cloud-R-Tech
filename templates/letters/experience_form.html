@@ -1,0 +1,170 @@
+{% extends "letters/base.html" %}
+{% block title %}Experience Letter - Cloud R tech{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Back to Dashboard</a>
+<div class="card">
+  <h1>Experience / Relieving Letter</h1>
+  <form id="dl-form" method="post" action="/generate/experience/">
+    {% csrf_token %}
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Reference No.</label>
+        <input type="text" id="ref-input" name="ref" placeholder="CRT001" required>
+      </div>
+
+      <div class="form-group">
+        <label>Gender</label>
+        <select name="gender" required>
+          <option value="male">Male (Mr.)</option>
+          <option value="female">Female (Ms.)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Employee Name</label>
+        <input type="text" name="name" placeholder="Jestin Rosariyo L" required>
+      </div>
+
+      <div class="form-group">
+        <label>Designation</label>
+        <div id="desg-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="designation-val" name="designation" required>
+      </div>
+
+      <div class="form-group">
+        <label>Closing Date (business hours)</label>
+        <div class="date-wrap">
+          <input type="date" id="closing_picker" class="date-picker">
+          <input type="text" id="closing_display" name="closing_date" placeholder="11-June-2026" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Date of Joining</label>
+        <div class="date-wrap">
+          <input type="date" id="joining_picker" class="date-picker">
+          <input type="text" id="joining_display" name="date_of_joining" placeholder="4th May 2026" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Date of Relieving</label>
+        <div class="date-wrap">
+          <input type="date" id="relieving_picker" class="date-picker">
+          <input type="text" id="relieving_display" name="date_of_relieving" placeholder="11th November 2026" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Reason for Relieving</label>
+        <div id="reason-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="reason-val" name="reason" required>
+      </div>
+
+      <div class="form-group full">
+        <label>Conduct</label>
+        <div id="conduct-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="conduct-val" name="conduct" required>
+      </div>
+
+    </div>
+    <div class="btn-group">
+      <button class="btn-generate" type="button" onclick="submitForm('/generate/experience/')">
+        📄&nbsp; Download PDF
+      </button>
+      <button class="btn-generate-docx" type="button" onclick="submitForm('/generate/experience/docx/')">
+        📝&nbsp; Download DOCX
+      </button>
+    </div>
+    <script>
+      function submitForm(url) {
+        var form = document.getElementById('dl-form');
+        form.action = url;
+        form.submit();
+      }
+    </script>
+  </form>
+</div>
+
+<script>
+  // ── Reference No. (CRT + 3 digits) ──
+  bindCRTRef(document.getElementById('ref-input'));
+
+  // ── Custom Dropdowns ──
+  initCDD({
+    wrap:        document.getElementById('desg-wrap'),
+    hiddenInput: document.getElementById('designation-val'),
+    sessionKey:  'designations',
+    placeholder: '— Select Designation —',
+  });
+  initCDD({
+    wrap:        document.getElementById('reason-wrap'),
+    hiddenInput: document.getElementById('reason-val'),
+    sessionKey:  'reasons',
+    placeholder: '— Select Reason —',
+  });
+  initCDD({
+    wrap:        document.getElementById('conduct-wrap'),
+    hiddenInput: document.getElementById('conduct-val'),
+    sessionKey:  'conducts',
+    placeholder: '— Select Conduct —',
+  });
+
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+  }
+  function bindTitleCase(name) {
+    document.querySelectorAll(`[name="${name}"]`).forEach(el => {
+      el.addEventListener('blur', () => { if (el.value) el.value = toTitleCase(el.value); });
+    });
+  }
+  ['name'].forEach(bindTitleCase);
+
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+
+  function formatDDMonthYYYY(s) {
+    const d = new Date(s + 'T00:00:00');
+    if (isNaN(d)) return '';
+    return `${d.getDate()}-${MONTHS[d.getMonth()]}-${d.getFullYear()}`;
+  }
+  function formatOrdinal(s) {
+    const d = new Date(s + 'T00:00:00');
+    if (isNaN(d)) return '';
+    const day = d.getDate(), m10 = day % 10, m100 = day % 100;
+    const sfx = (m100 >= 11 && m100 <= 13) ? 'th' : m10 === 1 ? 'st' : m10 === 2 ? 'nd' : m10 === 3 ? 'rd' : 'th';
+    return `${day}${sfx} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  function autoCorrectClosing(val) {
+    if (!val) return val;
+    if (/^\d{1,2}-[A-Za-z]+-\d{4}$/.test(val.trim())) return val.trim();
+    const d = new Date(val);
+    if (!isNaN(d)) return formatDDMonthYYYY(d.toISOString().split('T')[0]);
+    const parts = val.trim().split(/[\-\/\.]/);
+    if (parts.length === 3 && parts[2].length === 4) {
+      const [dd, mm, yyyy] = parts;
+      const d2 = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T00:00:00`);
+      if (!isNaN(d2)) return formatDDMonthYYYY(d2.toISOString().split('T')[0]);
+    }
+    return val;
+  }
+
+  function bindOrdinal(pid, did) {
+    const p = document.getElementById(pid), d = document.getElementById(did);
+    p.addEventListener('change', () => { d.value = formatOrdinal(p.value); });
+    d.addEventListener('input',  () => { p.value = ''; });
+  }
+  const closingPicker  = document.getElementById('closing_picker');
+  const closingDisplay = document.getElementById('closing_display');
+  closingPicker.addEventListener('change', () => { closingDisplay.value = formatDDMonthYYYY(closingPicker.value); });
+  closingDisplay.addEventListener('change', () => {
+    closingPicker.value = '';
+    closingDisplay.value = autoCorrectClosing(closingDisplay.value);
+  });
+
+  bindOrdinal('joining_picker',   'joining_display');
+  bindOrdinal('relieving_picker', 'relieving_display');
+</script>
+{% endblock %}

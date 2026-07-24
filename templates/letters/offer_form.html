@@ -1,0 +1,158 @@
+{% extends "letters/base.html" %}
+{% block title %}Offer Letter - Cloud R tech{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Back to Dashboard</a>
+<div class="card">
+  <h1>Offer Letter</h1>
+  <form id="dl-form" method="post" action="/generate/offer/">
+    {% csrf_token %}
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Letter Date</label>
+        <div class="date-wrap">
+          <input type="date" id="date_picker" class="date-picker">
+          <input type="text" id="date_display" name="date" placeholder="May 13, 2026" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Candidate Name</label>
+        <input type="text" name="name" placeholder="Jestin Rosariyo L" required>
+      </div>
+
+      <div class="form-group">
+        <label>Gender</label>
+        <select name="gender" required>
+          <option value="male">Male (Mr.)</option>
+          <option value="female">Female (Ms.)</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Address</label>
+        <textarea name="address" placeholder="61, West Street Pudhunagar, Pudhukkottai." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Pincode</label>
+        <input type="text" name="pincode" placeholder="613301" required>
+      </div>
+
+      <div class="form-group">
+        <label>Designation</label>
+        <div id="desg-wrap" class="cdd-wrap"></div>
+        <input type="hidden" id="designation-val" name="designation" required>
+      </div>
+
+      <div class="form-group">
+        <label>Joining Date</label>
+        <div class="date-wrap">
+          <input type="date" id="joining_picker" class="date-picker">
+          <input type="text" id="joining_display" name="joining_date" placeholder="1st June 2025" required>
+        </div>
+      </div>
+
+      <hr class="form-divider">
+
+      <div class="form-group">
+        <label>Monthly CTC (INR) – for salary breakup</label>
+        <input type="number" id="ctc_monthly" name="ctc_monthly" placeholder="15000" min="1" required>
+      </div>
+
+      <div class="form-group">
+        <label>Annual CTC (LPA) <span class="auto-badge">auto-calculated</span></label>
+        <input type="text" id="ctc_lpa" name="ctc_lpa" placeholder="Fills from Monthly CTC" readonly>
+      </div>
+
+    </div>
+    <div class="btn-group">
+      <button class="btn-generate" type="button" onclick="submitForm('/generate/offer/')">
+        📄&nbsp; Download PDF
+      </button>
+      <button class="btn-generate-docx" type="button" onclick="submitForm('/generate/offer/docx/')">
+        📝&nbsp; Download DOCX
+      </button>
+    </div>
+    <script>
+      function submitForm(url) {
+        var form = document.getElementById('dl-form');
+        form.action = url;
+        form.submit();
+      }
+    </script>
+  </form>
+</div>
+
+<script>
+  initCDD({
+    wrap:        document.getElementById('desg-wrap'),
+    hiddenInput: document.getElementById('designation-val'),
+    sessionKey:  'designations',
+    placeholder: '— Select Designation —',
+  });
+
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+  }
+  function bindTitleCase(name) {
+    document.querySelectorAll(`[name="${name}"]`).forEach(el => {
+      el.addEventListener('blur', () => { if (el.value) el.value = toTitleCase(el.value); });
+    });
+  }
+
+  function validateAddress(el) {
+    if (!el.value) return;
+    const v = el.value.trim();
+    const valid = /^[^,\.]+(?:,\s[^,\.]+)*\.$/.test(v);
+    let err = el.parentElement.querySelector('.addr-err');
+    if (!valid) {
+      if (!err) {
+        err = document.createElement('p');
+        err.className = 'addr-err';
+        err.style.cssText = 'color:#b91c1c;font-size:0.8rem;margin-top:5px;font-family:inherit;';
+        el.parentElement.appendChild(err);
+      }
+      err.textContent = '⚠ Format must be: 61, West Street, Pudhunagar, Pudhukkottai.  (comma-space between parts, ends with full stop)';
+      el.style.borderColor = '#ef4444';
+      el.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+    } else {
+      if (err) err.remove();
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+    }
+  }
+  const addrField = document.querySelector('[name="address"]');
+  if (addrField) {
+    addrField.addEventListener('blur',  () => validateAddress(addrField));
+    addrField.addEventListener('input', () => {
+      const err = addrField.parentElement.querySelector('.addr-err');
+      if (err) err.remove();
+      addrField.style.borderColor = '';
+      addrField.style.boxShadow = '';
+    });
+  }
+  ['name', 'address'].forEach(bindTitleCase);
+
+  function fmdy(s) {
+    const d = new Date(s + 'T00:00:00'); if (isNaN(d)) return '';
+    return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  }
+  function ford(s) {
+    const d = new Date(s + 'T00:00:00'); if (isNaN(d)) return '';
+    const day = d.getDate(), m10 = day%10, m100 = day%100;
+    const sfx = (m100>=11&&m100<=13)?'th':m10===1?'st':m10===2?'nd':m10===3?'rd':'th';
+    return `${day}${sfx} ${d.toLocaleDateString('en-US',{month:'long'})} ${d.getFullYear()}`;
+  }
+  const dp = document.getElementById('date_picker'),    dd = document.getElementById('date_display');
+  const jp = document.getElementById('joining_picker'), jd = document.getElementById('joining_display');
+  dp.addEventListener('change', () => { dd.value = fmdy(dp.value); }); dd.addEventListener('input', () => { dp.value=''; });
+  jp.addEventListener('change', () => { jd.value = ford(jp.value); }); jd.addEventListener('input', () => { jp.value=''; });
+
+  const ctcM = document.getElementById('ctc_monthly'), ctcL = document.getElementById('ctc_lpa');
+  ctcM.addEventListener('input', () => {
+    const m = parseFloat(ctcM.value);
+    ctcL.value = (!isNaN(m) && m > 0) ? (m * 12 / 100000).toFixed(2) : '';
+  });
+</script>
+{% endblock %}
