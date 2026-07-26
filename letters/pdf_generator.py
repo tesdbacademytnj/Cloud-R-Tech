@@ -218,8 +218,8 @@ def _salary_table(monthly_ctc):
     med    = round(m * 0.10)
     perf   = round(m * 0.15)
     conv   = round(m * 0.10)
-    mgmt   = round(m * 0.05)
-    ctc    = basic + hra + med + perf + conv + mgmt
+    mgmt   = int(m) - (basic + hra + med + perf + conv)
+    ctc    = int(m)
     deduct = round(basic * 0.0833) + 250
     net    = ctc - deduct
 
@@ -747,8 +747,8 @@ def generate_payslip(data: dict) -> bytes:
     med       = round(gross * 0.10)
     perf      = round(gross * 0.15)
     conv      = round(gross * 0.10)
-    mgmt      = round(gross * 0.05)
-    total_earn = basic + hra + med + perf + conv + mgmt
+    mgmt      = int(gross) - (basic + hra + med + perf + conv)
+    total_earn = int(gross)
     other_ded  = round(basic * 0.0833)   # EPF = 8.33% of Basic
     pt_tax     = 250                 # Professional Tax fixed
     total_ded  = other_ded + pt_tax
