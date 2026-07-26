@@ -3,6 +3,11 @@
 import os
 import sys
 
+# Use the modern SQLite bundled by pysqlite3-binary instead of the
+# older system SQLite (AlmaLinux 8 ships 3.26, Django needs 3.31+).
+import pysqlite3
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 
 def main():
     """Run administrative tasks."""
