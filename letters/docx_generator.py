@@ -471,8 +471,9 @@ def _neg_indent(para, left_pt):
 def _salary_calcs(m):
     m = float(m)
     basic = round(m*0.40); hra = round(m*0.20); med = round(m*0.10)
-    perf  = round(m*0.15); conv= round(m*0.10); mgmt= round(m*0.05)
-    ctc   = basic+hra+med+perf+conv+mgmt
+    perf  = round(m*0.15); conv= round(m*0.10)
+    mgmt  = int(m) - (basic+hra+med+perf+conv)
+    ctc   = int(m)
     ded   = round(basic*0.0833)+250
     net   = ctc-ded
     return basic,hra,med,perf,conv,mgmt,ctc,ded,net
@@ -894,8 +895,9 @@ def generate_payslip(data):
 
     gross = float(data.get('gross_salary', 0))
     basic = round(gross*0.40); hra   = round(gross*0.20); med  = round(gross*0.10)
-    perf  = round(gross*0.15); conv  = round(gross*0.10); mgmt = round(gross*0.05)
-    total_earn = basic+hra+med+perf+conv+mgmt
+    perf  = round(gross*0.15); conv  = round(gross*0.10)
+    mgmt  = int(gross) - (basic+hra+med+perf+conv)
+    total_earn = int(gross)
     other_ded  = round(basic * 0.0833); pt_tax = 250
     total_ded  = other_ded+pt_tax; net_pay = total_earn-total_ded
     def rs(v): return f"Rs.{v:,.0f}"

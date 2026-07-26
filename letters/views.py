@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from . import pdf_generator as pg
 from . import docx_generator as dg
+from .models import Designation
 
 logger = logging.getLogger(__name__)
 
@@ -195,8 +196,14 @@ def hr_settings(request):
 def dropdown_get(request):
     """GET /dropdown/?key=designations  → JSON list"""
     key = request.GET.get('key')
+    if key == 'designations':
+        items = list(Designation.objects.values_list('name', flat=True))
+        if not items:
+            for name in DEFAULT_DESIGNATIONS:
+                Designation.objects.get_or_create(name=name, defaults={'order': len(DEFAULT_DESIGNATIONS)})
+            items = list(DEFAULT_DESIGNATIONS)
+        return JsonResponse({'items': items})
     defaults = {
-        'designations': DEFAULT_DESIGNATIONS,
         'reasons':      DEFAULT_REASONS,
         'conducts':     DEFAULT_CONDUCTS,
         'categories':   DEFAULT_CATEGORIES,
@@ -221,6 +228,11 @@ def dropdown_save(request):
     if key not in valid_keys:
         return JsonResponse({'error': 'unknown key'}, status=400)
     items = [str(i).strip() for i in items if str(i).strip()]
+    if key == 'designations':
+        Designation.objects.all().delete()
+        for i, name in enumerate(items):
+            Designation.objects.create(name=name, order=i)
+        return JsonResponse({'ok': True, 'items': items})
     _save_list(request, key, items)
     return JsonResponse({'ok': True, 'items': items})
 
