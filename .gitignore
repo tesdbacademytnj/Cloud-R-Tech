@@ -6,5 +6,6 @@ __pycache__/
 .env.example
 .vscode/
 .idea/
-db.sqlite3.env.save
+db.sqlite3
+.env.save
 staticfiles/
