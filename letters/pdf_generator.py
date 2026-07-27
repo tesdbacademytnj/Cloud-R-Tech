@@ -220,7 +220,7 @@ def _salary_table(monthly_ctc):
     conv   = round(m * 0.10)
     mgmt   = int(m) - (basic + hra + med + perf + conv)
     ctc    = int(m)
-    deduct = round(basic * 0.0833) + 250
+    deduct = round(basic / 12) + 250
     net    = ctc - deduct
 
     def f(v):
@@ -749,10 +749,11 @@ def generate_payslip(data: dict) -> bytes:
     conv      = round(gross * 0.10)
     mgmt      = int(gross) - (basic + hra + med + perf + conv)
     total_earn = int(gross)
-    other_ded  = round(basic * 0.0833)   # EPF = 8.33% of Basic
-    pt_tax     = 250                 # Professional Tax fixed
-    total_ded  = other_ded + pt_tax
-    net_pay    = total_earn - total_ded
+    other_ded   = round(basic / 12)   # EPF = Basic ÷ 12 (8.33…%)
+    pt_tax      = 250                 # Professional Tax fixed
+    total_ded   = other_ded + pt_tax
+    net_pay     = total_earn - total_ded
+    rounding_adj = 0                  # absorbs any residual rounding difference
 
     def rs(v):
         return f"Rs.{v:,.0f}"
@@ -860,7 +861,7 @@ def generate_payslip(data: dict) -> bytes:
     # ── Outer box — full rectangle, corners closed ──────────────────────────
     # Use canvas rect() for pixel-perfect connected corners
     # Start box at y=49.50 (title bar top) so the top edge doesn't cut through the header banner
-    BOX_X, BOX_Y, BOX_W, BOX_H = 0, 49.50, 532.82, 209.85
+    BOX_X, BOX_Y, BOX_W, BOX_H = 0, 49.50, 532.82, 224.37
     c.saveState()
     c.setStrokeColorRGB(0, 0, 0)
     c.setLineWidth(0.5)
@@ -882,9 +883,10 @@ def generate_payslip(data: dict) -> bytes:
         186.27,   # Perf Bonus
         200.79,   # Conveyance
         215.31,   # Management
-        229.83,   # Totals top
-        244.35,   # Totals bottom / Net Pay top
-        259.35,   # Net Pay bottom — table final edge
+        229.83,   # Rounding Adjustment
+        244.35,   # Totals top
+        258.87,   # Totals bottom / Net Pay top
+        273.87,   # Net Pay bottom — table final edge
     ]:
         line(0.00, gy, FULL_W, 1.00)
 
@@ -896,15 +898,15 @@ def generate_payslip(data: dict) -> bytes:
     line(360.00,  99.12,  1.00,  14.52)   # after Sex | DOJ     (row2)
 
     # ── Verticals — salary table ──────────────────────────────────────────────
-    line(103.70, 114.61,  1.00, 145.25)   # Attendance | Earnings
-    line( 71.42, 129.13,  1.00, 130.70)   # att value sub-col
-    line(237.53, 114.61,  1.00, 145.27)   # Earnings | Amount
-    line(320.59, 114.61,  1.00, 145.27)   # Amount | Deductions
-    line(450.39, 128.16,  1.00, 116.19)   # Deductions Particulars | Amount
+    line(103.70, 114.61,  1.00, 159.77)   # Attendance | Earnings
+    line( 71.42, 129.13,  1.00, 145.22)   # att value sub-col
+    line(237.53, 114.61,  1.00, 159.79)   # Earnings | Amount
+    line(320.59, 114.61,  1.00, 159.79)   # Amount | Deductions
+    line(450.39, 128.16,  1.00, 130.71)   # Deductions Particulars | Amount
 
     # ── Verticals — Net Pay box ───────────────────────────────────────────────
-    line(  0.50, 244.35,  1.00,  15.00)   # left (aligns with grid x=0)
-    line(532.32, 244.35,  1.00,  15.00)   # right (aligns with grid x=532.82)
+    line(  0.50, 258.87,  1.00,  15.00)   # left (aligns with grid x=0)
+    line(532.32, 258.87,  1.00,  15.00)   # right (aligns with grid x=532.82)
 
     # ── Title ────────────────────────────────────────────────────────────────
     month_year = data.get('month_year', '')
@@ -955,6 +957,7 @@ def generate_payslip(data: dict) -> bytes:
     txt(450.39,        128.16,  81.43, ROW_H, 'Amount',      font=TNB, size=FSZ, bold=True, align='right')
 
     # ── Data rows ────────────────────────────────────────────────────────────
+    rounding_amt = rs(rounding_adj) if rounding_adj else ''
     rows = [
         (142.68, wdays,  'Basic',                rs(basic),  'Other Deduction',   rs(other_ded)),
         (157.20, phol,   'HRA',                  rs(hra),    'Professional Tax',  rs(pt_tax)),
@@ -962,6 +965,7 @@ def generate_payslip(data: dict) -> bytes:
         (186.27, '',     'Performance Bonus',    rs(perf),   '',                  ''),
         (200.79, '',     'Conveyance',           rs(conv),   '',                  ''),
         (215.31, '',     'Management Allowance', rs(mgmt),   '',                  ''),
+        (229.83, '',     'Rounding Adjustment',  rounding_amt, '',                ''),
     ]
     att_labels = {142.68: 'Working Days', 157.20: 'Paid Holiday'}
 
@@ -978,23 +982,23 @@ def generate_payslip(data: dict) -> bytes:
         if damt:
             txt(450.39,        gy,  81.43, ROW_H, damt,           font=TN, size=FSZ, align='right')
 
-    # ── Totals row (y=229.83 → 244.35, h=14.52) ──────────────────────────────
-    txt(1.92 + PAD,   229.83,  63.50, ROW_H, 'Total Days',        font=TNB, size=FSZ, bold=True)
-    txt(71.42,         229.83,  30.28, ROW_H, wdays,               font=TNB, size=FSZ, bold=True, align='right')
-    txt(103.70 + PAD,  229.83, 125.83, ROW_H, 'Total Earnings',   font=TNB, size=FSZ, bold=True)
-    txt(237.53,        229.83,  82.50, ROW_H, rs(total_earn),      font=TNB, size=FSZ, bold=True, align='right')
-    txt(320.59 + PAD,  229.83, 125.83, ROW_H, 'Total Deductions', font=TNB, size=FSZ, bold=True)
-    txt(450.39,        229.83,  81.43, ROW_H, rs(total_ded),       font=TNB, size=FSZ, bold=True, align='right')
+    # ── Totals row (y=244.35 → 258.87, h=14.52) ──────────────────────────────
+    txt(1.92 + PAD,   244.35,  63.50, ROW_H, 'Total Days',        font=TNB, size=FSZ, bold=True)
+    txt(71.42,         244.35,  30.28, ROW_H, wdays,               font=TNB, size=FSZ, bold=True, align='right')
+    txt(103.70 + PAD,  244.35, 125.83, ROW_H, 'Total Earnings',   font=TNB, size=FSZ, bold=True)
+    txt(237.53,        244.35,  82.50, ROW_H, rs(total_earn),      font=TNB, size=FSZ, bold=True, align='right')
+    txt(320.59 + PAD,  244.35, 125.83, ROW_H, 'Total Deductions', font=TNB, size=FSZ, bold=True)
+    txt(450.39,        244.35,  81.43, ROW_H, rs(total_ded),       font=TNB, size=FSZ, bold=True, align='right')
 
-    # ── Net Pay row (y=244.35 → 259.35, h=15.00) ─────────────────────────────
+    # ── Net Pay row (y=258.87 → 273.87, h=15.00) ─────────────────────────────
     NET_H = 15.00
-    txt(1.92 + PAD,  244.35, 444.49, NET_H, 'Net Pay:',      font=TNB, size=FSZ, bold=True, align='right')
-    txt(450.39,       244.35,  81.43, NET_H, rs(net_pay),    font=TNB, size=FSZ, bold=True, align='right')
+    txt(1.92 + PAD,  258.87, 444.49, NET_H, 'Net Pay:',      font=TNB, size=FSZ, bold=True, align='right')
+    txt(450.39,       258.87,  81.43, NET_H, rs(net_pay),    font=TNB, size=FSZ, bold=True, align='right')
 
     # ── NOTE — left-aligned, bold ─────────────────────────────────────────────
     c.setFont(TNB, 9)
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(_rl_x(1.92), _rl_y(268, 9),
+    c.drawString(_rl_x(1.92), _rl_y(280, 9),
         'NOTE: This is a computer generated copy and it does not need any seal or signature.')
 
     c.showPage()

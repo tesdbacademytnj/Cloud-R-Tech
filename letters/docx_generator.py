@@ -474,7 +474,7 @@ def _salary_calcs(m):
     perf  = round(m*0.15); conv= round(m*0.10)
     mgmt  = int(m) - (basic+hra+med+perf+conv)
     ctc   = int(m)
-    ded   = round(basic*0.0833)+250
+    ded   = round(basic / 12)+250
     net   = ctc-ded
     return basic,hra,med,perf,conv,mgmt,ctc,ded,net
 
@@ -898,8 +898,9 @@ def generate_payslip(data):
     perf  = round(gross*0.15); conv  = round(gross*0.10)
     mgmt  = int(gross) - (basic+hra+med+perf+conv)
     total_earn = int(gross)
-    other_ded  = round(basic * 0.0833); pt_tax = 250
+    other_ded  = round(basic / 12); pt_tax = 250
     total_ded  = other_ded+pt_tax; net_pay = total_earn-total_ded
+    rounding_adj = 0
     def rs(v): return f"Rs.{v:,.0f}"
 
     wdays      = str(data.get('working_days', ''))
@@ -1005,7 +1006,7 @@ def generate_payslip(data):
     #   Earnings particulars 133.83 | Earnings amount 83.06
     #   Deductions particulars 129.80 | Deductions amount 82.43
     scw = [71.42, 32.28, 133.83, 83.06, 129.80, 82.43]
-    sal = doc.add_table(rows=10, cols=6); sal.alignment = WD_TABLE_ALIGNMENT.LEFT
+    sal = doc.add_table(rows=11, cols=6); sal.alignment = WD_TABLE_ALIGNMENT.LEFT
     _fixed_table_layout(sal, sum(scw), scw)
 
     def sc(ri,ci,txt,bold=False,align=L,sz=10,
@@ -1034,6 +1035,7 @@ def generate_payslip(data):
     sc(1,4,'Particulars',bold=True)
     sc(1,5,'Amount',bold=True,align=R)
 
+    rounding_amt = rs(rounding_adj) if rounding_adj else ''
     srows=[
         ('Working Days', wdays, 'Basic',               rs(basic), 'Other Deduction',  rs(other_ded)),
         ('Paid Holiday', phol,  'HRA',                 rs(hra),   'Professional Tax', rs(pt_tax)),
@@ -1041,18 +1043,19 @@ def generate_payslip(data):
         ('','',                 'Performance Bonus',    rs(perf),  '',''),
         ('','',                 'Conveyance',           rs(conv),  '',''),
         ('','',                 'Management Allowance', rs(mgmt),  '',''),
+        ('','',                 'Rounding Adjustment',  rounding_amt, '',''),
     ]
     for i,(a,b,c,d,e,f) in enumerate(srows):
         ri = i+2
         sc(ri,0,a); sc(ri,1,b,align=R)
         sc(ri,2,c); sc(ri,3,d,align=R); sc(ri,4,e); sc(ri,5,f,align=R)
 
-    sc(8,0,'Total Days',bold=True); sc(8,1,wdays,bold=True,align=R)
-    sc(8,2,'Total Earnings',bold=True); sc(8,3,rs(total_earn),bold=True,align=R)
-    sc(8,4,'Total Deductions',bold=True); sc(8,5,rs(total_ded),bold=True,align=R)
+    sc(9,0,'Total Days',bold=True); sc(9,1,wdays,bold=True,align=R)
+    sc(9,2,'Total Earnings',bold=True); sc(9,3,rs(total_earn),bold=True,align=R)
+    sc(9,4,'Total Deductions',bold=True); sc(9,5,rs(total_ded),bold=True,align=R)
 
     # Net Pay row — label spans first 5 columns, amount in last column (matches PDF)
-    nr = sal.rows[9]; nm = nr.cells[0]
+    nr = sal.rows[10]; nm = nr.cells[0]
     for k in range(1,5): nm = nm.merge(nr.cells[k])
     _ps_cell_borders(nm); _cell_margins(nm,16,16,40,40)
     np_ = nm.paragraphs[0]; np_.clear(); np_.alignment = R
