@@ -474,8 +474,9 @@ def _salary_calcs(m):
     perf  = round(m*0.15); conv= round(m*0.10)
     mgmt  = int(m) - (basic+hra+med+perf+conv)
     ctc   = int(m)
-    ded   = round(basic / 12)+250
-    net   = ctc-ded
+    net_pay = round(ctc / 1.05)
+    ded     = round(net_pay * 0.04) + round(net_pay * 0.01)
+    net     = ctc - ded
     return basic,hra,med,perf,conv,mgmt,ctc,ded,net
 
 def _fm(v): return f"{v:,.0f}"
@@ -893,13 +894,15 @@ def generate_payslip(data):
             if cs.get(qn('w:name')) == 'compatibilityMode':
                 cs.set(qn('w:val'), '15')
 
-    gross = float(data.get('gross_salary', 0))
-    basic = round(gross*0.40); hra   = round(gross*0.20); med  = round(gross*0.10)
-    perf  = round(gross*0.15); conv  = round(gross*0.10)
-    mgmt  = int(gross) - (basic+hra+med+perf+conv)
-    total_earn = int(gross)
-    other_ded  = round(basic / 12); pt_tax = 250
-    total_ded  = other_ded+pt_tax; net_pay = total_earn-total_ded
+    ctc = float(data.get('ctc', 0))
+    basic = round(ctc*0.40); hra   = round(ctc*0.20); med  = round(ctc*0.10)
+    perf  = round(ctc*0.15); conv  = round(ctc*0.10)
+    mgmt  = int(ctc) - (basic+hra+med+perf+conv)
+    total_earn = int(ctc)
+    net_pay     = round(ctc / 1.05)
+    other_ded   = round(net_pay * 0.04)
+    pt_tax      = round(net_pay * 0.01)
+    total_ded   = other_ded + pt_tax
     rounding_adj = 0
     def rs(v): return f"Rs.{v:,.0f}"
 

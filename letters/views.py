@@ -24,16 +24,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_HR_NAME = 'Raj Padmanaban'
 
 # Default dropdown lists (session-persisted)
-DEFAULT_DESIGNATIONS = [
-    'Software Engineer', 'Senior Software Engineer', 'Python Developer',
-    'Full Stack Developer', 'HR Manager', 'Project Manager', 'Team Lead',
-]
+DEFAULT_DESIGNATIONS = []
 DEFAULT_REASONS = [
     'Career Growth', 'Personal Reasons', 'Higher Studies',
     'Relocation', 'Better Opportunity', 'Health Issues',
 ]
 DEFAULT_CONDUCTS = ['Good', 'Excellent', 'Satisfactory', 'Outstanding']
-DEFAULT_CATEGORIES = ['Contract', 'Permanent', 'Probation', 'Intern', 'Trainee']
+DEFAULT_CATEGORIES = ['Contract', 'Permanent', 'Intern', 'Trainee']
 
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
@@ -198,10 +195,6 @@ def dropdown_get(request):
     key = request.GET.get('key')
     if key == 'designations':
         items = list(Designation.objects.values_list('name', flat=True))
-        if not items:
-            for name in DEFAULT_DESIGNATIONS:
-                Designation.objects.get_or_create(name=name, defaults={'order': len(DEFAULT_DESIGNATIONS)})
-            items = list(DEFAULT_DESIGNATIONS)
         return JsonResponse({'items': items})
     defaults = {
         'reasons':      DEFAULT_REASONS,
@@ -399,7 +392,7 @@ def generate_payslip(request):
             'month_year':      request.POST.get('month_year', '').strip(),
             'working_days':    request.POST.get('working_days', '').strip(),
             'paid_holiday':    request.POST.get('paid_holiday', '0').strip(),
-            'gross_salary':    _int_field(request.POST, 'gross_salary'),
+            'ctc':             _int_field(request.POST, 'ctc'),
         }
         pdf = pg.generate_payslip(data)
         logger.info("Payslip PDF generated for %s", data['name'])
@@ -541,7 +534,7 @@ def generate_payslip_docx(request):
             'month_year':      request.POST.get('month_year', '').strip(),
             'working_days':    request.POST.get('working_days', '').strip(),
             'paid_holiday':    request.POST.get('paid_holiday', '0').strip(),
-            'gross_salary':    _int_field(request.POST, 'gross_salary'),
+            'ctc':             _int_field(request.POST, 'ctc'),
         }
         docx = dg.generate_payslip(data)
         logger.info("Payslip DOCX generated for %s", data['name'])

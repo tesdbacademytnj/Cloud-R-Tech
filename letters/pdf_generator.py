@@ -220,8 +220,9 @@ def _salary_table(monthly_ctc):
     conv   = round(m * 0.10)
     mgmt   = int(m) - (basic + hra + med + perf + conv)
     ctc    = int(m)
-    deduct = round(basic / 12) + 250
-    net    = ctc - deduct
+    net_pay = round(ctc / 1.05)
+    deduct  = round(net_pay * 0.04) + round(net_pay * 0.01)
+    net     = ctc - deduct
 
     def f(v):
         """Monthly: western comma format  e.g. 18,000"""
@@ -736,24 +737,23 @@ def generate_payslip(data: dict) -> bytes:
     c   = canvas.Canvas(buf, pagesize=(_PS_PW, _PS_PH))
     c.setTitle('Pay Slip')
 
-    # ── Salary calculation — percentages verified from Payslip_April__2026.docx ──
-    # Gross 37500 → Basic 15000(40%) HRA 7500(20%) Med 3750(10%)
-    #               Perf 5625(15%)  Conv 3750(10%) Mgmt 1875(5%)  Total=37500
-    # Other Deduction = Basic / 12  (EPF employee share — confirmed 1250.00 exact)
-    # Professional Tax = 250.00 fixed
-    gross     = float(data.get('gross_salary', 0))
-    basic     = round(gross * 0.40)
-    hra       = round(gross * 0.20)
-    med       = round(gross * 0.10)
-    perf      = round(gross * 0.15)
-    conv      = round(gross * 0.10)
-    mgmt      = int(gross) - (basic + hra + med + perf + conv)
-    total_earn = int(gross)
-    other_ded   = round(basic / 12)   # EPF = Basic ÷ 12 (8.33…%)
-    pt_tax      = 250                 # Professional Tax fixed
+    # ── Salary calculation — reverse from CTC ──
+    # Enter CTC (e.g. 26250) → Net Pay = CTC / 1.05
+    # Other Deduction (4%) = Net Pay × 0.04
+    # Professional Tax (1%) = Net Pay × 0.01
+    ctc       = float(data.get('ctc', 0))
+    basic     = round(ctc * 0.40)
+    hra       = round(ctc * 0.20)
+    med       = round(ctc * 0.10)
+    perf      = round(ctc * 0.15)
+    conv      = round(ctc * 0.10)
+    mgmt      = int(ctc) - (basic + hra + med + perf + conv)
+    total_earn = int(ctc)
+    net_pay     = round(ctc / 1.05)
+    other_ded   = round(net_pay * 0.04)
+    pt_tax      = round(net_pay * 0.01)
     total_ded   = other_ded + pt_tax
-    net_pay     = total_earn - total_ded
-    rounding_adj = 0                  # absorbs any residual rounding difference
+    rounding_adj = 0
 
     def rs(v):
         return f"Rs.{v:,.0f}"
